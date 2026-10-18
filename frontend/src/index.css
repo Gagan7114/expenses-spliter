@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/* Layout: single phone column (max 480px), sticky header, bottom nav, floating add button.
+   Ink navy for actions, marigold for the one thing to tap; green/red only mean owed/owes. */
+:root {
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #eaeef5;
+  --line: #dde3ec;
+  --ink: #141b2d;
+  --muted: #5d6880;
+  --primary: #1d2b4f;
+  --on-primary: #ffffff;
+  --accent: #f2a93b;
+  --on-accent: #2a1a00;
+  --owed: #0f7a55;
+  --owed-bg: #e3f4ec;
+  --owes: #c03636;
+  --owes-bg: #fbe8e8;
+  --overlay: rgb(15 20 35 / 0.45);
+  /* Height of the phone bottom bar; 0 on wider screens where the sidebar takes over. */
+  --nav-h: calc(64px + env(safe-area-inset-bottom));
+  color-scheme: light;
+}
+@media (min-width: 768px) {
+  :root { --nav-h: 0px; }
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #11151f;
+    --surface: #1a2030;
+    --surface-2: #232a3d;
+    --line: #2d3549;
+    --ink: #eef1f7;
+    --muted: #9aa4ba;
+    --primary: #c9d5f5;
+    --on-primary: #141b2d;
+    --accent: #f5b552;
+    --on-accent: #2a1a00;
+    --owed: #4fd1a0;
+    --owed-bg: #133328;
+    --owes: #ff8a80;
+    --owes-bg: #3a1c1f;
+    --overlay: rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-owed: var(--owed);
+  --color-owed-bg: var(--owed-bg);
+  --color-owes: var(--owes);
+  --color-owes-bg: var(--owes-bg);
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html, body, #root { min-height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+.num { font-variant-numeric: tabular-nums; }
+h1, h2, h3 { text-wrap: balance; }
+@layer base {
+  /* In the base layer so `outline-none` on inputs (which show focus with their border) still wins. */
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.animate-sheet { animation: sheet-up 220ms cubic-bezier(.2,.8,.2,1); }
+.animate-fade { animation: fade-in 160ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet, .animate-fade { animation: none; }
+}
