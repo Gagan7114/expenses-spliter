@@ -1,5 +1,8 @@
 const ACCESS = 'tab.access'
 const REFRESH = 'tab.refresh'
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL || '/api'
+).replace(/\/+$/, '')
 
 function read(key: string) {
   try { return localStorage.getItem(key) } catch { return null }
@@ -47,7 +50,7 @@ let refreshing: Promise<boolean> | null = null
 async function refreshAccess(): Promise<boolean> {
   const refresh = tokens.refresh
   if (!refresh) return false
-  refreshing ??= fetch('/api/auth/refresh/', {
+  refreshing ??= fetch(`${API_BASE_URL}/auth/refresh/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh }),
@@ -72,7 +75,9 @@ export async function api<T = unknown>(path: string, options: { method?: string;
 
   let res: Response
   try {
-    res = await fetch(`/api${path}`, {
+    const endpoint = `${API_BASE_URL}/${path.replace(/^\/+/, '')}`
+
+    res = await fetch(endpoint, {
       method: options.method ?? 'GET',
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
