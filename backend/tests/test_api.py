@@ -53,6 +53,26 @@ def test_forgot_password_flow(make_user, mailoutbox):
     assert r.status_code == 200
 
 
+def test_forgot_password_reports_email_problems(make_user, settings, monkeypatch):
+    make_user("jashan")
+    anon = APIClient()
+    assert anon.post("/api/auth/password-reset/", {"login": ""}, format="json").status_code == 400
+
+    backend = settings.EMAIL_BACKEND
+    settings.EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    r = anon.post("/api/auth/password-reset/", {"login": "jashan"}, format="json")
+    assert r.status_code == 503 and "isn't set up" in r.data["detail"]
+
+    settings.EMAIL_BACKEND = backend
+
+    def broken_send(*args, **kwargs):
+        raise OSError("mail server unreachable")
+
+    monkeypatch.setattr("accounts.views.send_mail", broken_send)
+    r = anon.post("/api/auth/password-reset/", {"login": "jashan"}, format="json")
+    assert r.status_code == 503 and "couldn't send" in r.data["detail"]
+
+
 def test_full_group_flow(make_user):
     jashan, priya, rahul, outsider = (make_user(n) for n in ["jashan", "priya", "rahul", "outsider"])
 

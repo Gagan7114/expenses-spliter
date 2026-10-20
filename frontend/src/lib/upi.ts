@@ -1,9 +1,28 @@
+const isIOS = typeof navigator !== 'undefined' &&
+  (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
+
 /**
- * A `upi://pay` link that opens GPay, PhonePe, Paytm or any UPI app with the
- * payee, amount and note filled in. Money goes straight to the payee's bank;
- * the app gets no confirmation back, so the payer marks it paid afterwards.
+ * Apps we open directly. There's deliberately no plain `upi://` option: it goes
+ * to whichever app claimed it (often WhatsApp) with no choice, since Android uses
+ * the default app and iOS has no chooser at all. Anyone else can copy the UPI ID.
  */
-export function upiPayLink({ upiId, name, amountCents, note }: { upiId: string; name: string; amountCents: number; note: string }) {
+export const UPI_APPS = [
+  // Google Pay registers `gpay://` on iOS and the older `tez://` on Android.
+  { id: 'gpay', name: 'Google Pay', prefix: isIOS ? 'gpay://upi/pay' : 'tez://upi/pay' },
+  { id: 'phonepe', name: 'PhonePe', prefix: 'phonepe://pay' },
+  { id: 'paytm', name: 'Paytm', prefix: 'paytmmp://pay' },
+] as const
+
+export type UpiApp = (typeof UPI_APPS)[number]
+
+/**
+ * A link that opens a UPI app with the payee, amount and note filled in.
+ * Money goes straight to the payee's bank; the app gets no confirmation back,
+ * so the payer marks it paid afterwards.
+ */
+export function upiPayLink({ upiId, name, amountCents, note, app }: {
+  upiId: string; name: string; amountCents: number; note: string; app: UpiApp
+}) {
   // Built by hand: URLSearchParams turns spaces into '+', which some UPI apps show as-is.
   const params: Record<string, string> = {
     pa: upiId,
@@ -12,5 +31,5 @@ export function upiPayLink({ upiId, name, amountCents, note }: { upiId: string; 
     cu: 'INR',
     tn: note.slice(0, 50),
   }
-  return 'upi://pay?' + Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
+  return app.prefix + '?' + Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
 }

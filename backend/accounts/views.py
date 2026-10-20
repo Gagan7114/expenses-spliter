@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -12,6 +14,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User, user_id_validator
 from .serializers import MeSerializer, PasswordResetConfirmSerializer, PublicUserSerializer, RegisterSerializer
+
+logger = logging.getLogger(__name__)
 
 
 def auth_response(user, status_code=status.HTTP_200_OK):
@@ -51,21 +55,38 @@ def password_reset(request):
 
     Always answers the same way so it can't be used to find out who has an account.
     """
+    # The console backend only prints to the server log, which is fine locally but
+    # means nobody receives the email in production.
+    if not settings.DEBUG and settings.EMAIL_BACKEND.endswith("console.EmailBackend"):
+        logger.error("Password reset requested but EMAIL_HOST is not set; no email can be sent.")
+        return Response(
+            {"detail": "Password reset by email isn't set up yet. Contact support."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
     identifier = str(request.data.get("login", "")).strip().lower().lstrip("@")
-    user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first() if identifier else None
+    if not identifier:
+        return Response({"login": ["Enter your user ID or email."]}, status=status.HTTP_400_BAD_REQUEST)
+    user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first()
     if user and user.is_active and user.has_usable_password():
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
         link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?uid={uid}&token={token}"
-        send_mail(
-            "Reset your Splitter password",
-            f"Hi {user.display_name},\n\n"
-            f"Someone asked to reset the password for @{user.username}. "
-            f"Open this link to choose a new one (it works for 1 hour):\n\n{link}\n\n"
-            "If this wasn't you, ignore this email. Your password won't change.",
-            None,
-            [user.email],
-        )
+        try:
+            send_mail(
+                "Reset your Splitter password",
+                f"Hi {user.display_name},\n\n"
+                f"Someone asked to reset the password for @{user.username}. "
+                f"Open this link to choose a new one (it works for 1 hour):\n\n{link}\n\n"
+                "If this wasn't you, ignore this email. Your password won't change.",
+                None,
+                [user.email],
+            )
+        except Exception:
+            logger.exception("Could not send password reset email to user %s", user.pk)
+            return Response(
+                {"detail": "We couldn't send the email right now. Try again in a few minutes."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
     return Response({"detail": "If an account matches, we've emailed a reset link to it."})
 
 
