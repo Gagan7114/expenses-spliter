@@ -54,11 +54,19 @@ export function UpiPayButton({ upiId, name, amountCents, currency, note, onOpene
         <p className="mb-3 text-muted">
           <span className="num font-semibold text-ink">{amount}</span> to {name} · {upiId}
         </p>
+        <p className="mb-3 rounded-xl bg-surface-2 px-4 py-3 text-sm">
+          We'll copy <span className="num font-semibold">{amount}</span> for you. In the app, tap the amount box and paste it.
+          Apps often block payments where another app fills in the amount.
+        </p>
         <ul className="flex flex-col gap-2">
           {UPI_APPS.map((app) => (
             <li key={app.id}>
               <a href={upiPayLink({ ...payment, app })}
-                onClick={() => { setSheet(null); onOpened() }}
+                onClick={() => {
+                  // Started inside the tap (not awaited) so iOS allows it before the app opens.
+                  navigator.clipboard?.writeText(upiAmount(amountCents)).catch(() => {})
+                  setSheet(null); onOpened()
+                }}
                 className="flex min-h-14 items-center gap-3 rounded-2xl bg-surface-2 px-4 font-semibold transition hover:brightness-105 active:scale-[.98]">
                 <Icon name="wallet" size={20} />
                 <span className="flex-1">{app.name}</span>

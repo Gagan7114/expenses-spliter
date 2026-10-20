@@ -16,33 +16,33 @@ export const UPI_APPS = [
 export type UpiApp = (typeof UPI_APPS)[number]
 
 /**
- * A link that opens a UPI app with the payee, amount and note filled in.
+ * A link that opens a UPI app with the payee and note filled in, but not the
+ * amount: Google Pay flags links that pre-fill an amount for a personal UPI ID
+ * as fraud and declines them. The payer pastes the amount (we copy it first).
  * Money goes straight to the payee's bank; the app gets no confirmation back,
  * so the payer marks it paid afterwards.
  */
-export function upiPayLink({ app, ...payment }: UpiPayment & { app: UpiApp }) {
-  return app.prefix + '?' + upiQuery(payment)
+export function upiPayLink({ app, upiId, name, note }: UpiPayment & { app: UpiApp }) {
+  return app.prefix + '?' + upiQuery({ upiId, name, note })
 }
 
-/** What a UPI QR code holds. Any UPI app's scanner reads it, and scans aren't
- * blocked the way links to personal UPI IDs often are. */
+/** What a UPI QR code holds, amount included. Scans count as started by the
+ * payer, so apps don't block them the way they block links. */
 export function upiQrText(payment: UpiPayment) {
   return 'upi://pay?' + upiQuery(payment)
 }
 
-/** '1250.50', for pasting into a UPI app's amount box. */
-export const upiAmount = (amountCents: number) => (amountCents / 100).toFixed(2)
+/** '500' or '1250.50', for pasting into a UPI app's amount box. */
+export const upiAmount = (amountCents: number) =>
+  amountCents % 100 === 0 ? String(amountCents / 100) : (amountCents / 100).toFixed(2)
 
 type UpiPayment = { upiId: string; name: string; amountCents: number; note: string }
 
-function upiQuery({ upiId, name, amountCents, note }: UpiPayment) {
+function upiQuery({ upiId, name, amountCents, note }: Omit<UpiPayment, 'amountCents'> & { amountCents?: number }) {
   // Built by hand: URLSearchParams turns spaces into '+', which some UPI apps show as-is.
-  const params: Record<string, string> = {
-    pa: upiId,
-    pn: name,
-    am: upiAmount(amountCents),
-    cu: 'INR',
-    tn: note.slice(0, 50),
-  }
+  const params: Record<string, string> = { pa: upiId, pn: name }
+  if (amountCents !== undefined) params.am = (amountCents / 100).toFixed(2)
+  params.cu = 'INR'
+  params.tn = note.slice(0, 50)
   return Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
 }
