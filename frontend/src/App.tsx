@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-do
 import { useAuth } from './auth/AuthContext'
 import { AppShell } from './components/AppShell'
 import { Spinner } from './components/ui'
-import { Login, Signup } from './pages/Auth'
+import { ForgotPassword, Login, ResetPassword, Signup } from './pages/Auth'
 import { DetailsPage } from './pages/Details'
 import { AddExpensePage, EditExpensePage } from './pages/ExpenseForm'
 import { GroupPage } from './pages/Group'
@@ -43,6 +43,8 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<SignedOut><Login /></SignedOut>} />
       <Route path="/signup" element={<SignedOut><Signup /></SignedOut>} />
+      <Route path="/forgot-password" element={<SignedOut><ForgotPassword /></SignedOut>} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/" element={<SignedIn><Home /></SignedIn>} />
       <Route path="/add" element={<SignedIn><AddExpensePage /></SignedIn>} />
       <Route path="/details" element={<SignedIn><DetailsPage /></SignedIn>} />

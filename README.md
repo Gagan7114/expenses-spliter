@@ -68,7 +68,8 @@ Open http://localhost:5173. Vite forwards `/api` to Django, so both must be runn
 - Leave a group once your balance is zero
 - Add, edit and delete expenses with an equal split among chosen people
 - Live balances, and a settle-up screen with the minimum number of payments
-- Mark payments as paid
+- Pay by UPI in one tap: add your UPI ID in Profile, and anyone who owes you gets a "Pay with UPI" button that opens GPay/PhonePe/Paytm with the amount filled in
+- Mark payments as paid (after a UPI payment, the app asks if it went through)
 - Groups refresh every 10 seconds so everyone sees changes
 
 ## Not built yet

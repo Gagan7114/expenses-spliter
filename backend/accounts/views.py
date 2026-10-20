@@ -1,4 +1,9 @@
+from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.db.models import Q
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -6,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User, user_id_validator
-from .serializers import MeSerializer, PublicUserSerializer, RegisterSerializer
+from .serializers import MeSerializer, PasswordResetConfirmSerializer, PublicUserSerializer, RegisterSerializer
 
 
 def auth_response(user, status_code=status.HTTP_200_OK):
@@ -37,6 +42,39 @@ def login(request):
             {"detail": "Wrong user ID, email or password."}, status=status.HTTP_401_UNAUTHORIZED
         )
     return auth_response(user)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset(request):
+    """Email a reset link to the account with this user ID or email.
+
+    Always answers the same way so it can't be used to find out who has an account.
+    """
+    identifier = str(request.data.get("login", "")).strip().lower().lstrip("@")
+    user = User.objects.filter(Q(username=identifier) | Q(email=identifier)).first() if identifier else None
+    if user and user.is_active and user.has_usable_password():
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?uid={uid}&token={token}"
+        send_mail(
+            "Reset your Splitter password",
+            f"Hi {user.display_name},\n\n"
+            f"Someone asked to reset the password for @{user.username}. "
+            f"Open this link to choose a new one (it works for 1 hour):\n\n{link}\n\n"
+            "If this wasn't you, ignore this email. Your password won't change.",
+            None,
+            [user.email],
+        )
+    return Response({"detail": "If an account matches, we've emailed a reset link to it."})
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset_confirm(request):
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    return auth_response(serializer.save())
 
 
 @api_view(["GET"])

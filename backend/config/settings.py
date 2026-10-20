@@ -106,3 +106,19 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
 
 # Where invite links point.
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+
+# Password reset emails. Without EMAIL_HOST set, emails are printed to the
+# runserver console so the reset link can be copied from there in development.
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_BACKEND = (
+    "django.core.mail.backends.smtp.EmailBackend"
+    if EMAIL_HOST
+    else "django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Splitter <no-reply@localhost>")
+# Reset links stay valid for 1 hour.
+PASSWORD_RESET_TIMEOUT = 60 * 60

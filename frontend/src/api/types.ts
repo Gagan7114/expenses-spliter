@@ -1,4 +1,4 @@
-export type User = { id: number; username: string; display_name: string; email?: string }
+export type User = { id: number; username: string; display_name: string; email?: string; upi_id?: string }
 
 export type GroupType = 'trip' | 'household' | 'other'
 
@@ -68,7 +68,7 @@ export type Invite = {
   created_by: User
 }
 
-export type Person = { id: number; name: string; username: string; is_active: boolean }
+export type Person = { id: number; name: string; username: string; upi_id: string; is_active: boolean }
 export type GroupRef = { id: number; name: string; type: GroupType; currency: string; my_membership_id: number }
 
 export type ActivityItem =

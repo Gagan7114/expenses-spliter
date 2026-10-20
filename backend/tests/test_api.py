@@ -29,6 +29,30 @@ def test_signup_login_and_user_id_rules(make_user):
     assert r.status_code == 401
 
 
+def test_forgot_password_flow(make_user, mailoutbox):
+    make_user("jashan")
+    anon = APIClient()
+    # Unknown accounts get the same answer and no email.
+    assert anon.post("/api/auth/password-reset/", {"login": "nobody"}, format="json").status_code == 200
+    assert len(mailoutbox) == 0
+
+    assert anon.post("/api/auth/password-reset/", {"login": "@Jashan"}, format="json").status_code == 200
+    assert len(mailoutbox) == 1 and mailoutbox[0].to == ["jashan@example.com"]
+    link = next(w for w in mailoutbox[0].body.split() if "/reset-password?" in w)
+    query = dict(p.split("=", 1) for p in link.split("?", 1)[1].split("&"))
+
+    r = anon.post("/api/auth/password-reset/confirm/", {**query, "password": "password"}, format="json")
+    assert r.status_code == 400 and "password" in r.data
+    r = anon.post("/api/auth/password-reset/confirm/", {**query, "password": "new-m0nsoon-pass"}, format="json")
+    assert r.status_code == 200 and r.data["user"]["username"] == "jashan"
+    # The link is single-use: changing the password invalidates the token.
+    r = anon.post("/api/auth/password-reset/confirm/", {**query, "password": "an0ther-pass!"}, format="json")
+    assert r.status_code == 400
+
+    r = anon.post("/api/auth/login/", {"login": "jashan", "password": "new-m0nsoon-pass"}, format="json")
+    assert r.status_code == 200
+
+
 def test_full_group_flow(make_user):
     jashan, priya, rahul, outsider = (make_user(n) for n in ["jashan", "priya", "rahul", "outsider"])
 
@@ -138,3 +162,28 @@ def test_activity_and_pending_across_groups(make_user):
 
     assert outsider.get("/api/activity/").data == []
     assert outsider.get("/api/pending/").data == []
+
+
+def test_upi_id_is_shared_with_group_members_only(make_user):
+    jashan, priya, outsider = (make_user(n) for n in ["jashan", "priya", "outsider"])
+    assert jashan.patch("/api/me/", {"upi_id": "not-a-upi"}, format="json").status_code == 400
+    r = jashan.patch("/api/me/", {"upi_id": " Jashan.S@OkHDFCbank "}, format="json")
+    assert r.status_code == 200 and r.data["upi_id"] == "jashan.s@okhdfcbank"
+
+    gid = jashan.post("/api/groups/", {"name": "Flat", "type": "household"}, format="json").data["id"]
+    priya.post(f"/api/join/{jashan.get(f'/api/groups/{gid}/invite-link/').data['code']}/")
+    members = priya.get(f"/api/groups/{gid}/").data["members"]
+    assert {m["user"]["username"]: m["user"]["upi_id"] for m in members} == {"jashan": "jashan.s@okhdfcbank", "priya": ""}
+
+    jm = next(m["id"] for m in members if m["user"]["username"] == "jashan")
+    pm = next(m["id"] for m in members if m["user"]["username"] == "priya")
+    jashan.post(f"/api/groups/{gid}/expenses/", {
+        "description": "Rent", "amount": "1000", "paid_by": jm, "participants": [jm, pm],
+    }, format="json")
+    pay = priya.get("/api/pending/").data[0]["payments"][0]
+    assert pay["to"]["upi_id"] == "jashan.s@okhdfcbank"
+
+    # Strangers searching by user ID don't see it.
+    assert "upi_id" not in outsider.get("/api/users/search/", {"q": "jas"}).data[0]
+    # Clearing it is allowed.
+    assert jashan.patch("/api/me/", {"upi_id": ""}, format="json").data["upi_id"] == ""

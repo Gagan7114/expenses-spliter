@@ -6,7 +6,7 @@ import { Avatar, Button, Field, FormError, Page, PageHeader } from '../component
 
 export function Profile() {
   const { user, setUser, logout } = useAuth()
-  const [form, setForm] = useState({ display_name: user!.display_name, username: user!.username })
+  const [form, setForm] = useState({ display_name: user!.display_name, username: user!.username, upi_id: user!.upi_id ?? '' })
   const [err, setErr] = useState<ApiError>()
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -41,10 +41,13 @@ export function Profile() {
           <Field id="profile-username" label="User ID" required autoCapitalize="none" maxLength={20} value={form.username}
             onChange={(e) => setForm({ ...form, username: e.target.value.replace(/\s/g, '') })} error={err?.field('username')}
             hint="Changing it won't affect your groups or balances." />
+          <Field id="profile-upi" label="UPI ID" placeholder="name@okhdfcbank" autoCapitalize="none" inputMode="email" maxLength={100}
+            value={form.upi_id} onChange={(e) => setForm({ ...form, upi_id: e.target.value.replace(/\s/g, '') })} error={err?.field('upi_id')}
+            hint="People in your groups see this so they can pay you in one tap. Leave it empty to hide it." />
           {saved && <p className="text-sm font-semibold text-owed">Profile saved</p>}
           <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</Button>
         </form>
-        <FormError message={err && !err.field('username') && !err.field('display_name') ? err.message : undefined} />
+        <FormError message={err && !err.field('username') && !err.field('display_name') && !err.field('upi_id') ? err.message : undefined} />
         <Button variant="ghost" onClick={logout}>Sign out</Button>
       </Page>
     </>

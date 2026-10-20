@@ -54,6 +54,7 @@ export function Login() {
           value={form.login} onChange={(e) => setForm({ ...form, login: e.target.value })} />
         <Field id="password" label="Password" type="password" autoComplete="current-password" required
           value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <Link className="-mt-2 self-end text-sm font-semibold text-muted underline underline-offset-4" to="/forgot-password">Forgot password?</Link>
         <FormError message={error} />
         <Button type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</Button>
       </form>
@@ -122,6 +123,94 @@ export function Signup() {
       </form>
       <p className="text-center text-muted">
         Already have an account? <Link className="font-semibold text-ink underline underline-offset-4" to={`/login${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`}>Sign in</Link>
+      </p>
+    </AuthShell>
+  )
+}
+
+export function ForgotPassword() {
+  const [login, setLogin] = useState('')
+  const [sent, setSent] = useState<string>()
+  const [error, setError] = useState<string>()
+  const [busy, setBusy] = useState(false)
+
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setError(undefined)
+    try {
+      const r = await api<{ detail: string }>('/auth/password-reset/', { method: 'POST', body: { login } })
+      setSent(r.detail)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <AuthShell title="Forgot your password?" subtitle="Enter your user ID or email and we'll send you a link to set a new one.">
+      {sent ? (
+        <p role="status" className="rounded-2xl bg-surface p-4">{sent} Check your inbox and spam folder.</p>
+      ) : (
+        <form onSubmit={submit} className="flex flex-col gap-4">
+          <Field id="login" label="User ID or email" autoComplete="username" autoCapitalize="none" required
+            value={login} onChange={(e) => setLogin(e.target.value)} />
+          <FormError message={error} />
+          <Button type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send reset link'}</Button>
+        </form>
+      )}
+      <p className="text-center text-muted">
+        Remembered it? <Link className="font-semibold text-ink underline underline-offset-4" to="/login">Sign in</Link>
+      </p>
+    </AuthShell>
+  )
+}
+
+export function ResetPassword() {
+  const { resetPassword } = useAuth()
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const uid = params.get('uid') ?? ''
+  const token = params.get('token') ?? ''
+  const [password, setPassword] = useState('')
+  const [err, setErr] = useState<ApiError>()
+  const [busy, setBusy] = useState(false)
+
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setErr(undefined)
+    try {
+      await resetPassword(uid, token, password)
+      navigate('/', { replace: true })
+    } catch (e) {
+      setErr(e instanceof ApiError ? e : new ApiError(0, { detail: 'Something went wrong. Try again.' }))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!uid || !token) {
+    return (
+      <AuthShell title="Link not valid" subtitle="This reset link is incomplete. Ask for a new one.">
+        <Link to="/forgot-password" className="text-center font-semibold text-ink underline underline-offset-4">Send a new reset link</Link>
+      </AuthShell>
+    )
+  }
+
+  const passwordError = err?.field('password')
+  return (
+    <AuthShell title="Choose a new password" subtitle="You'll be signed in once it's saved.">
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <Field id="new-password" label="New password" type="password" autoComplete="new-password" required minLength={8}
+          value={password} onChange={(e) => setPassword(e.target.value)}
+          error={passwordError} hint="At least 8 characters, not too common." />
+        <FormError message={err && !passwordError ? err.message : undefined} />
+        <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save password'}</Button>
+      </form>
+      <p className="text-center text-muted">
+        Link expired? <Link className="font-semibold text-ink underline underline-offset-4" to="/forgot-password">Send a new one</Link>
       </p>
     </AuthShell>
   )

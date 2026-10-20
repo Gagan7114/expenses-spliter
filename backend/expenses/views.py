@@ -92,7 +92,10 @@ def settlement_detail(request, settlement_id):
 
 def _people(group):
     return {
-        m.id: {"id": m.id, "name": m.user.display_name, "username": m.user.username, "is_active": m.is_active}
+        m.id: {
+            "id": m.id, "name": m.user.display_name, "username": m.user.username,
+            "upi_id": m.user.upi_id, "is_active": m.is_active,
+        }
         for m in group.memberships.select_related("user")
     }
 

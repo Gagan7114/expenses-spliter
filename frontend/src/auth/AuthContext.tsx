@@ -10,6 +10,7 @@ type AuthState = {
   loading: boolean
   login: (login: string, password: string) => Promise<void>
   register: (data: { username: string; email: string; password: string; display_name: string }) => Promise<void>
+  resetPassword: (uid: string, token: string, password: string) => Promise<void>
   logout: () => void
   setUser: (u: User) => void
 }
@@ -51,6 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     login: async (login, password) => finish(await api<AuthResponse>('/auth/login/', { method: 'POST', body: { login, password } })),
     register: async (data) => finish(await api<AuthResponse>('/auth/register/', { method: 'POST', body: data })),
+    resetPassword: async (uid, token, password) =>
+      finish(await api<AuthResponse>('/auth/password-reset/confirm/', { method: 'POST', body: { uid, token, password } })),
     logout,
     setUser,
   }

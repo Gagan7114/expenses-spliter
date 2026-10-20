@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
 import { useGroup, useGroupMutation, useSettlePlan } from '../api/hooks'
+import { useAuth } from '../auth/AuthContext'
+import { UpiPayButton } from '../components/UpiPay'
 import { Avatar, BottomSheet, Button, Empty, FormError, Icon, Page, Spinner, TopBar } from '../components/ui'
 import { memberMap, nameOf, todayISO } from '../lib/group'
 import { formatMoney } from '../lib/money'
@@ -12,7 +14,10 @@ export function SettleUp() {
   const id = Number(useParams().id)
   const group = useGroup(id)
   const plan = useSettlePlan(id)
+  const { user } = useAuth()
   const [paying, setPaying] = useState<Payment | null>(null)
+  // True when the sheet opened because the user went off to their UPI app.
+  const [afterUpi, setAfterUpi] = useState(false)
   const record = useGroupMutation(id, (p: Payment) =>
     api(`/groups/${id}/settlements/`, {
       method: 'POST',
@@ -48,6 +53,8 @@ export function SettleUp() {
             <ul className="flex flex-col gap-2">
               {payments.map((pay) => {
                 const mine = pay.from === me || pay.to === me
+                const payee = members.get(pay.to)?.user
+                const canUpi = pay.from === me && !!payee?.upi_id && g.currency === 'INR'
                 return (
                   <li key={`${pay.from}-${pay.to}`} className={`flex flex-col gap-3 rounded-2xl bg-surface p-4 ${mine ? 'ring-2 ring-accent/70' : ''}`}>
                     <div className="flex items-center gap-2">
@@ -60,7 +67,18 @@ export function SettleUp() {
                       <span className="font-semibold">{nameOf(members, pay.from, me)}</span> {pay.from === me ? 'pay' : 'pays'}{' '}
                       <span className="font-semibold">{nameOf(members, pay.to, me)}</span>
                     </p>
-                    <Button variant={mine ? 'primary' : 'ghost'} onClick={() => setPaying(pay)}>Mark as paid</Button>
+                    {pay.from === me && payee && (
+                      <UpiPayButton upiId={payee.upi_id} name={payee.display_name} amountCents={pay.amount_cents} currency={g.currency}
+                        note={`Splitter: ${g.name}`} onOpened={() => { setPaying(pay); setAfterUpi(true) }} />
+                    )}
+                    {pay.to === me && !user?.upi_id && g.currency === 'INR' && (
+                      <p className="text-sm text-muted">
+                        <Link to="/profile" className="font-semibold text-primary underline">Add your UPI ID</Link> so {nameOf(members, pay.from, me)} can pay you in one tap.
+                      </p>
+                    )}
+                    <Button variant={mine && !canUpi ? 'primary' : 'ghost'} onClick={() => { setPaying(pay); setAfterUpi(false) }}>
+                      {canUpi ? 'Paid another way? Mark as paid' : 'Mark as paid'}
+                    </Button>
                   </li>
                 )
               })}
@@ -70,20 +88,20 @@ export function SettleUp() {
         )}
       </Page>
 
-      <BottomSheet open={!!paying} onClose={() => setPaying(null)} title="Record this payment?">
+      <BottomSheet open={!!paying} onClose={() => setPaying(null)} title={afterUpi ? 'Did the UPI payment go through?' : 'Record this payment?'}>
         {paying && (
           <div className="flex flex-col gap-4">
             <p className="text-muted">
               <span className="font-semibold text-ink">{nameOf(members, paying.from, me)}</span> paid{' '}
               <span className="font-semibold text-ink">{nameOf(members, paying.to, me)}</span>{' '}
               <span className="num font-semibold text-ink">{formatMoney(paying.amount_cents, g.currency)}</span>.
-              It shows in the group's activity for everyone.
+              {afterUpi && ' Check your UPI app for the success message first.'} It shows in the group's activity for everyone.
             </p>
             <FormError message={record.error instanceof ApiError ? record.error.message : undefined} />
             <Button disabled={record.isPending} onClick={() => record.mutate(paying, { onSuccess: () => setPaying(null) })}>
               {record.isPending ? 'Recording…' : 'Yes, it was paid'}
             </Button>
-            <Button variant="ghost" onClick={() => setPaying(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setPaying(null)}>{afterUpi ? 'Not yet' : 'Cancel'}</Button>
           </div>
         )}
       </BottomSheet>

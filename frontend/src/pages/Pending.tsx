@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
 import { useGroupMutation, usePending } from '../api/hooks'
 import type { GroupRef, Person } from '../api/types'
+import { UpiPayButton } from '../components/UpiPay'
 import { Avatar, BottomSheet, Button, Empty, FormError, GroupTile, Icon, Page, PageHeader, Section, Segmented, Spinner } from '../components/ui'
 import { todayISO } from '../lib/group'
 import { formatMoney } from '../lib/money'
@@ -14,6 +15,8 @@ export function PendingPage() {
   const pending = usePending()
   const [paying, setPaying] = useState<Item | null>(null)
   const [tab, setTab] = useState<Tab | null>(null)
+  // True when the sheet opened because the user went off to their UPI app.
+  const [afterUpi, setAfterUpi] = useState(false)
   const record = useGroupMutation(paying?.group.id ?? null, (p: Item) =>
     api(`/groups/${p.group.id}/settlements/`, {
       method: 'POST',
@@ -70,6 +73,7 @@ export function PendingPage() {
                     const me = p.group.my_membership_id
                     const mine = active !== 'others'
                     const other = active === 'pay' ? p.to : p.from
+                    const canUpi = active === 'pay' && !!p.to.upi_id && p.group.currency === 'INR'
                     return (
                       <li key={`${p.group.id}-${p.from.id}-${p.to.id}`} className="flex flex-col gap-4 rounded-3xl bg-surface p-4">
                         <div className="flex items-start justify-between gap-3">
@@ -91,8 +95,12 @@ export function PendingPage() {
                             {mine && <p className="truncate text-sm text-muted">@{other.username}</p>}
                           </div>
                         </div>
-                        <Button variant={active === 'pay' ? 'primary' : 'ghost'} onClick={() => setPaying(p)}>
-                          {active === 'pay' ? 'I paid this' : active === 'receive' ? 'I received this' : 'Mark as paid'}
+                        {active === 'pay' && (
+                          <UpiPayButton upiId={p.to.upi_id} name={p.to.name} amountCents={p.amount_cents} currency={p.group.currency}
+                            note={`Splitter: ${p.group.name}`} onOpened={() => { setPaying(p); setAfterUpi(true) }} />
+                        )}
+                        <Button variant={active === 'pay' && !canUpi ? 'primary' : 'ghost'} onClick={() => { setPaying(p); setAfterUpi(false) }}>
+                          {canUpi ? 'Paid another way? Mark as paid' : active === 'pay' ? 'I paid this' : active === 'receive' ? 'I received this' : 'Mark as paid'}
                         </Button>
                       </li>
                     )
@@ -109,7 +117,7 @@ export function PendingPage() {
         )}
       </Page>
 
-      <BottomSheet open={!!paying} onClose={() => { setPaying(null); record.reset() }} title="Record this payment?">
+      <BottomSheet open={!!paying} onClose={() => { setPaying(null); record.reset() }} title={afterUpi ? 'Did the UPI payment go through?' : 'Record this payment?'}>
         {paying && (
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-center gap-3 rounded-2xl bg-surface-2 py-5">
@@ -120,12 +128,13 @@ export function PendingPage() {
             <p className="text-center text-muted">
               <b className="text-ink">{who(paying.from, paying.group.my_membership_id)}</b> paid <b className="text-ink">{who(paying.to, paying.group.my_membership_id)}</b>{' '}
               <b className="num text-ink">{formatMoney(paying.amount_cents, paying.group.currency)}</b> in {paying.group.name}.
+              {afterUpi && ' Check your UPI app for the success message first.'}
             </p>
             <FormError message={record.error instanceof ApiError ? record.error.message : undefined} />
             <Button disabled={record.isPending} onClick={() => record.mutate(paying, { onSuccess: () => setPaying(null) })}>
               {record.isPending ? 'Recording…' : 'Yes, it was paid'}
             </Button>
-            <Button variant="ghost" onClick={() => setPaying(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setPaying(null)}>{afterUpi ? 'Not yet' : 'Cancel'}</Button>
           </div>
         )}
       </BottomSheet>

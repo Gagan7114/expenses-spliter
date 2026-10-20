@@ -1,13 +1,13 @@
 from django.conf import settings
 from rest_framework import serializers
 
-from accounts.serializers import PublicUserSerializer
+from accounts.serializers import MemberUserSerializer, PublicUserSerializer
 
 from .models import Group, Invite, Membership
 
 
 class MembershipSerializer(serializers.ModelSerializer):
-    user = PublicUserSerializer(read_only=True)
+    user = MemberUserSerializer(read_only=True)
     is_active = serializers.BooleanField(read_only=True)
 
     class Meta:
