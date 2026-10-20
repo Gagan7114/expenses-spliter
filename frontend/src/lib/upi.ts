@@ -20,16 +20,29 @@ export type UpiApp = (typeof UPI_APPS)[number]
  * Money goes straight to the payee's bank; the app gets no confirmation back,
  * so the payer marks it paid afterwards.
  */
-export function upiPayLink({ upiId, name, amountCents, note, app }: {
-  upiId: string; name: string; amountCents: number; note: string; app: UpiApp
-}) {
+export function upiPayLink({ app, ...payment }: UpiPayment & { app: UpiApp }) {
+  return app.prefix + '?' + upiQuery(payment)
+}
+
+/** What a UPI QR code holds. Any UPI app's scanner reads it, and scans aren't
+ * blocked the way links to personal UPI IDs often are. */
+export function upiQrText(payment: UpiPayment) {
+  return 'upi://pay?' + upiQuery(payment)
+}
+
+/** '1250.50', for pasting into a UPI app's amount box. */
+export const upiAmount = (amountCents: number) => (amountCents / 100).toFixed(2)
+
+type UpiPayment = { upiId: string; name: string; amountCents: number; note: string }
+
+function upiQuery({ upiId, name, amountCents, note }: UpiPayment) {
   // Built by hand: URLSearchParams turns spaces into '+', which some UPI apps show as-is.
   const params: Record<string, string> = {
     pa: upiId,
     pn: name,
-    am: (amountCents / 100).toFixed(2),
+    am: upiAmount(amountCents),
     cu: 'INR',
     tn: note.slice(0, 50),
   }
-  return app.prefix + '?' + Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
+  return Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
 }
