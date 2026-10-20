@@ -6,14 +6,21 @@ const isIOS = typeof navigator !== 'undefined' &&
  * to whichever app claimed it (often WhatsApp) with no choice, since Android uses
  * the default app and iOS has no chooser at all. Anyone else can copy the UPI ID.
  */
-export const UPI_APPS = [
+export type UpiApp = {
+  id: string
+  name: string
+  prefix: string
+  /** Send only the UPI ID: the app declined links with a name, note or amount
+   * to a personal UPI ID as fraud. */
+  bare?: boolean
+}
+
+export const UPI_APPS: UpiApp[] = [
   // Google Pay registers `gpay://` on iOS and the older `tez://` on Android.
-  { id: 'gpay', name: 'Google Pay', prefix: isIOS ? 'gpay://upi/pay' : 'tez://upi/pay' },
+  { id: 'gpay', name: 'Google Pay', prefix: isIOS ? 'gpay://upi/pay' : 'tez://upi/pay', bare: true },
   { id: 'phonepe', name: 'PhonePe', prefix: 'phonepe://pay' },
   { id: 'paytm', name: 'Paytm', prefix: 'paytmmp://pay' },
-] as const
-
-export type UpiApp = (typeof UPI_APPS)[number]
+]
 
 /**
  * A link that opens a UPI app with the payee and note filled in, but not the
@@ -23,7 +30,7 @@ export type UpiApp = (typeof UPI_APPS)[number]
  * so the payer marks it paid afterwards.
  */
 export function upiPayLink({ app, upiId, name, note }: UpiPayment & { app: UpiApp }) {
-  return app.prefix + '?' + upiQuery({ upiId, name, note })
+  return app.prefix + '?' + (app.bare ? `pa=${encodeURIComponent(upiId)}` : upiQuery({ upiId, name, note }))
 }
 
 /** What a UPI QR code holds, amount included. Scans count as started by the
