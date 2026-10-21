@@ -84,3 +84,38 @@ export type PendingGroup = {
   greedy_count: number
   payments: { from: Person; to: Person; amount_cents: number }[]
 }
+
+export type DailyItem = {
+  id: number
+  name: string
+  unit: string
+  default_quantity: string
+  rate_cents: number
+  start_date: string
+  group: number | null
+  group_name: string | null
+  user: number
+  created_by: string
+  created_at: string
+}
+
+export type DailyBill = { expense_id: number; amount_cents: number; paid_by: number; up_to_date: boolean }
+
+export type DailyDayStatus = 'default' | 'changed' | 'skipped' | 'future' | 'inactive'
+
+export type DailyMonth = {
+  month: string
+  total_quantity: string
+  total_cents: number
+  delivered_days: number
+  skipped_days: number
+}
+
+export type DailyItemSummary = DailyItem & { this_month: DailyMonth }
+
+export type DailyMonthDetail = DailyMonth & {
+  item: DailyItem
+  bill: DailyBill | null
+  changed_days: number
+  days: { date: string; status: DailyDayStatus; quantity: string | null; amount_cents: number }[]
+}

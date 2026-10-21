@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
 import { useExpenses, useGroup, useGroupMutation, useGroups } from '../api/hooks'
-import { Avatar, BottomSheet, Button, CategoryTile, Empty, FormError, GroupTile, Icon, Page, PageHeader, Spinner, TopBar } from '../components/ui'
+import { Avatar, BottomSheet, Button, CategoryTile, Empty, FormError, GroupTile, Icon, IconButton, Page, PageHeader, Spinner, TopBar } from '../components/ui'
 import { CATEGORIES, todayISO } from '../lib/group'
 import { currencySymbol, equalSplit, formatMoney, parseCents } from '../lib/money'
 
@@ -22,13 +22,13 @@ export function AddExpensePage() {
       {list.map((g) => (
         <li key={g.id}>
           <button onClick={() => choose(g.id)}
-            className={`flex min-h-16 w-full items-center gap-3 rounded-2xl border-2 bg-surface p-3 text-left transition hover:border-primary ${g.id === groupId ? 'border-primary' : 'border-transparent'}`}>
+            className={`flex min-h-16 w-full items-center gap-3 rounded-2xl border bg-surface p-3 text-left transition hover:border-line-strong ${g.id === groupId ? 'border-ink ring-1 ring-ink' : 'border-line'}`}>
             <GroupTile name={g.name} size={40} />
             <span className="min-w-0 flex-1">
               <span className="block truncate font-semibold">{g.name}</span>
-              <span className="text-sm text-muted">{g.member_count} people · {g.currency}</span>
+              <span className="text-[13px] text-muted">{g.member_count} people · {g.currency}</span>
             </span>
-            {g.id === groupId && <Icon name="check" />}
+            {g.id === groupId && <span className="grid size-6 place-items-center rounded-full bg-primary text-on-primary"><Icon name="check" size={14} strokeWidth={3} /></span>}
           </button>
         </li>
       ))}
@@ -60,13 +60,13 @@ export function AddExpensePage() {
         title="Add expense"
         groupSwitch={
           <button type="button" onClick={() => setPicking(true)}
-            className="flex min-h-14 items-center gap-3 rounded-2xl bg-surface px-3 text-left transition hover:bg-surface-2">
+            className="flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-surface px-3 text-left transition hover:border-line-strong">
             <GroupTile name={current.name} size={36} />
             <span className="min-w-0 flex-1">
               <span className="block text-xs text-muted">Adding to</span>
               <span className="block truncate font-semibold">{current.name}</span>
             </span>
-            <span className="flex items-center gap-1 text-sm font-semibold text-muted">Change <Icon name="down" size={16} /></span>
+            <span className="flex items-center gap-1 rounded-lg bg-surface-2 px-2.5 py-1.5 text-[13px] font-semibold">Change <Icon name="down" size={14} /></span>
           </button>
         }
       />
@@ -144,47 +144,45 @@ function ExpenseForm({ groupId, expenseId, title, groupSwitch }: { groupId: numb
       {expenseId ? (
         <TopBar title={title} back={`/groups/${groupId}`}
           action={
-            <button aria-label="Delete expense" onClick={() => setConfirmDelete(true)} className="grid size-11 place-items-center rounded-full text-owes hover:bg-surface-2">
-              <Icon name="trash" />
-            </button>
+            <IconButton label="Delete expense" icon="trash" tone="danger" onClick={() => setConfirmDelete(true)} />
           } />
       ) : <PageHeader title={title} />}
       <Page>
         <form onSubmit={submit} className="flex flex-col gap-5">
           {groupSwitch}
-          <div className="grid gap-5 md:grid-cols-[1.1fr_1fr] md:items-start">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-[1.1fr_1fr] md:items-start">
             <div className="flex flex-col gap-5">
-              <label className="flex flex-col items-center gap-1 rounded-3xl bg-surface px-4 py-7">
-                <span className="text-sm font-semibold text-muted">How much?</span>
-                <span className="flex items-baseline gap-1 font-display">
-                  <span className="text-3xl font-bold text-muted">{currencySymbol(g.currency)}</span>
+              <label className="flex flex-col items-center gap-2 rounded-3xl border border-line bg-surface px-4 py-8 focus-within:border-ink">
+                <span className="text-[13px] font-medium text-muted">How much?</span>
+                <span className="flex items-baseline gap-1">
+                  <span className="text-3xl font-semibold text-faint">{currencySymbol(g.currency)}</span>
                   <input
                     id="amount" inputMode="decimal" autoComplete="off" placeholder="0" required autoFocus={!expenseId}
                     value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ''))}
-                    className="num bg-transparent text-5xl font-extrabold outline-none placeholder:text-line"
+                    className="num bg-transparent text-[56px] leading-none font-bold tracking-tight outline-none placeholder:text-line-strong"
                     style={{ width: `${Math.max(amount.length, 1) + 0.5}ch` }}
                     aria-invalid={!!err?.field('amount') || (amount !== '' && cents === null)}
                   />
                 </span>
                 {(err?.field('amount') || (amount !== '' && cents === null)) && (
-                  <span className="text-sm text-owes">{err?.field('amount') ?? 'Enter an amount like 450 or 99.50'}</span>
+                  <span className="text-[13px] text-owes">{err?.field('amount') ?? 'Enter an amount like 450 or 99.50'}</span>
                 )}
               </label>
 
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="description" className="text-sm font-semibold text-muted">What was it for?</label>
+                <label htmlFor="description" className="text-[13px] font-medium text-muted">What was it for?</label>
                 <input id="description" required maxLength={120} placeholder="Dinner at Thalassa" value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="min-h-12 rounded-xl border border-line bg-surface px-4 text-base outline-none focus:border-primary" />
+                  className="min-h-12 rounded-xl border border-line bg-surface px-3.5 text-base outline-none transition placeholder:text-faint focus:border-ink focus:ring-4 focus:ring-ink/5" />
               </div>
 
               <fieldset className="flex flex-col gap-2">
-                <legend className="mb-2 text-sm font-semibold text-muted">Category</legend>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-3">
+                <legend className="mb-2 text-[13px] font-medium text-muted">Category</legend>
+                <div className="grid grid-cols-5 gap-1.5 md:grid-cols-5">
                   {CATEGORIES.map((c) => (
                     <button type="button" key={c.value} aria-pressed={category === c.value} onClick={() => setCategory(c.value)}
-                      className={`flex flex-col items-center gap-1.5 rounded-2xl border-2 py-2.5 text-xs font-semibold transition ${category === c.value ? 'border-primary bg-surface' : 'border-transparent bg-surface text-muted hover:text-ink'}`}>
-                      <CategoryTile value={c.value} size={34} />
+                      className={`flex flex-col items-center gap-1.5 rounded-xl border py-2.5 text-[11px] font-semibold transition ${category === c.value ? 'border-ink bg-surface text-ink ring-1 ring-ink' : 'border-line bg-surface text-muted hover:border-line-strong hover:text-ink'}`}>
+                      <CategoryTile value={c.value} size={32} />
                       {c.label}
                     </button>
                   ))}
@@ -192,14 +190,14 @@ function ExpenseForm({ groupId, expenseId, title, groupSwitch }: { groupId: numb
               </fieldset>
 
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => setPickPayer(true)} className="flex min-h-14 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-left hover:border-primary">
+                <button type="button" onClick={() => setPickPayer(true)} className="flex min-h-14 items-center gap-2.5 rounded-xl border border-line bg-surface px-3 text-left transition hover:border-line-strong">
                   {payer && <Avatar name={payer.user.display_name} size={30} />}
                   <span className="min-w-0">
                     <span className="block text-xs text-muted">Paid by</span>
                     <span className="block truncate font-semibold">{payer ? (payer.id === g.my_membership_id ? 'You' : payer.user.display_name) : 'Choose'}</span>
                   </span>
                 </button>
-                <label className="flex min-h-14 flex-col justify-center rounded-xl border border-line bg-surface px-3">
+                <label className="flex min-h-14 flex-col justify-center rounded-xl border border-line bg-surface px-3 focus-within:border-ink">
                   <span className="text-xs text-muted">Date</span>
                   <input id="date" type="date" required max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} className="bg-transparent font-semibold outline-none" />
                 </label>
@@ -207,30 +205,30 @@ function ExpenseForm({ groupId, expenseId, title, groupSwitch }: { groupId: numb
             </div>
 
             <fieldset className="flex flex-col gap-2">
-              <legend className="mb-2 flex w-full items-center justify-between text-sm font-semibold text-muted">
+              <legend className="mb-2 flex w-full items-center justify-between text-[13px] font-medium text-muted">
                 <span>Split equally between</span>
-                <button type="button" className="text-ink underline underline-offset-4"
+                <button type="button" className="rounded-lg px-2 py-1 font-semibold text-ink hover:bg-surface-2"
                   onClick={() => setParticipants(participants.length === active.length ? [] : active.map((m) => m.id))}>
                   {participants.length === active.length ? 'Clear' : 'Everyone'}
                 </button>
               </legend>
-              <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+              <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
                 {active.map((m) => {
                   const on = participants.includes(m.id)
                   return (
                     <li key={m.id}>
-                      <label className="flex min-h-14 cursor-pointer items-center gap-3 px-4 py-2 hover:bg-surface-2/50">
-                        <input type="checkbox" checked={on} onChange={() => toggle(m.id)} className="size-5 accent-[var(--primary)]" />
+                      <label className="flex min-h-14 cursor-pointer items-center gap-3 px-4 py-2 transition hover:bg-surface-2/60">
+                        <input type="checkbox" checked={on} onChange={() => toggle(m.id)} className="size-[18px] rounded accent-[var(--primary)]" />
                         <Avatar name={m.user.display_name} size={32} />
                         <span className="min-w-0 flex-1 truncate font-medium">{m.id === g.my_membership_id ? 'You' : m.user.display_name}</span>
-                        <span className={`num text-sm ${on ? 'font-semibold' : 'text-muted'}`}>{on && cents ? formatMoney(shares.get(m.id) ?? 0, g.currency) : '—'}</span>
+                        <span className={`num text-sm ${on ? 'font-semibold' : 'text-faint'}`}>{on && cents ? formatMoney(shares.get(m.id) ?? 0, g.currency) : '—'}</span>
                       </label>
                     </li>
                   )
                 })}
               </ul>
               {cents && participants.length > 0 ? (
-                <p className="px-1 text-sm text-muted">
+                <p className="num px-1 text-[13px] text-muted">
                   {participants.length} {participants.length === 1 ? 'person' : 'people'} · about {formatMoney(Math.round(cents / participants.length), g.currency)} each
                 </p>
               ) : null}
@@ -240,7 +238,7 @@ function ExpenseForm({ groupId, expenseId, title, groupSwitch }: { groupId: numb
 
           <FormError message={err && !err.field('amount') && !err.field('participants') ? err.message : undefined} />
           {/* Opaque bar so the sticky button never shows the form through it on phones. */}
-          <div className="sticky z-10 -mx-4 bg-bg/95 px-4 py-2 backdrop-blur md:static md:mx-0 md:flex md:justify-end md:bg-transparent md:p-0"
+          <div className="sticky z-10 -mx-4 border-t border-line bg-bg/95 px-4 py-3 backdrop-blur md:static md:mx-0 md:flex md:justify-end md:border-0 md:bg-transparent md:p-0"
             style={{ bottom: 'var(--nav-h)' }}>
             <Button type="submit" variant="accent" className="w-full md:w-auto md:px-10" disabled={save.isPending || !ready}>
               {save.isPending ? 'Saving…' : expenseId ? 'Save changes' : cents ? `Add ${formatMoney(cents, g.currency)}` : 'Add expense'}
@@ -254,10 +252,10 @@ function ExpenseForm({ groupId, expenseId, title, groupSwitch }: { groupId: numb
           {active.map((m) => (
             <li key={m.id}>
               <button onClick={() => { setPaidBy(m.id); setPickPayer(false) }}
-                className={`flex min-h-14 w-full items-center gap-3 rounded-xl px-3 text-left hover:bg-surface-2 ${paidBy === m.id ? 'bg-surface-2' : ''}`}>
+                className={`flex min-h-14 w-full items-center gap-3 rounded-xl px-3 text-left transition hover:bg-surface-2 ${paidBy === m.id ? 'bg-surface-2' : ''}`}>
                 <Avatar name={m.user.display_name} size={36} />
                 <span className="flex-1 font-semibold">{m.id === g.my_membership_id ? 'You' : m.user.display_name}</span>
-                {paidBy === m.id && <Icon name="check" />}
+                {paidBy === m.id && <span className="grid size-6 place-items-center rounded-full bg-primary text-on-primary"><Icon name="check" size={14} strokeWidth={3} /></span>}
               </button>
             </li>
           ))}
@@ -265,13 +263,13 @@ function ExpenseForm({ groupId, expenseId, title, groupSwitch }: { groupId: numb
       </BottomSheet>
 
       <BottomSheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete this expense?">
-        <p className="mb-5 text-muted">Balances will be recalculated for everyone in the group. This can't be undone.</p>
-        <div className="flex flex-col gap-2">
+        <p className="mb-5 text-[15px] text-muted">Balances will be recalculated for everyone in the group. This can't be undone.</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="ghost" onClick={() => setConfirmDelete(false)}>Keep it</Button>
           <Button variant="danger" disabled={remove.isPending}
             onClick={() => remove.mutate(undefined, { onSuccess: () => navigate(`/groups/${groupId}`, { replace: true }) })}>
             {remove.isPending ? 'Deleting…' : 'Delete expense'}
           </Button>
-          <Button variant="ghost" onClick={() => setConfirmDelete(false)}>Keep it</Button>
         </div>
       </BottomSheet>
     </>

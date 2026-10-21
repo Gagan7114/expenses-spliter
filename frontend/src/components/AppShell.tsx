@@ -13,10 +13,11 @@ function useCounts() {
 }
 
 const NAV = [
-  { to: '/', label: 'Groups', icon: 'groups', end: true, count: null },
-  { to: '/details', label: 'Details', icon: 'details', end: false, count: null },
+  { to: '/', label: 'Groups', icon: 'home', end: true, count: null },
+  { to: '/details', label: 'Activity', icon: 'activity', end: false, count: null },
   { to: '/pending', label: 'Pending payments', short: 'Pending', icon: 'wallet', end: false, count: 'pending' },
   { to: '/invite', label: 'Invite & join', short: 'Invite', icon: 'invite', end: false, count: 'invites' },
+  { to: '/daily', label: 'Daily items', icon: 'milk', end: false, count: null },
 ] as const
 
 /** Add expense opens the current group when you're inside one. */
@@ -25,10 +26,10 @@ function useAddLink() {
   return match ? `/add?group=${match.params.id}` : '/add'
 }
 
-function Logo() {
+export function Logo({ size = 36 }: { size?: number }) {
   return (
-    <span className="grid size-10 place-items-center rounded-xl bg-primary">
-      <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden><path d="M8 23L24 9" stroke="var(--accent)" strokeWidth="4.5" strokeLinecap="round" /></svg>
+    <span className="grid shrink-0 place-items-center bg-[#121316] ring-1 ring-white/10" style={{ width: size, height: size, borderRadius: size * 0.3 }}>
+      <svg width={size * 0.55} height={size * 0.55} viewBox="0 0 32 32" aria-hidden><path d="M9 23L23 9" stroke="#c8f04a" strokeWidth="5" strokeLinecap="round" /></svg>
     </span>
   )
 }
@@ -38,36 +39,37 @@ function Sidebar() {
   const counts = useCounts()
   const addLink = useAddLink()
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col gap-6 border-r border-line bg-surface px-4 py-6 md:flex">
-      <Link to="/" className="flex items-center gap-3 px-2">
-        <Logo />
-        <span className="font-display text-2xl font-extrabold">Tab</span>
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-line bg-surface md:flex">
+      <Link to="/" className="flex h-16 items-center gap-2.5 px-5">
+        <Logo size={30} />
+        <span className="text-xl font-bold tracking-tight">Tab</span>
       </Link>
-      <Link to={addLink} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-accent font-semibold text-on-accent shadow-sm transition hover:brightness-105 active:scale-[.98]">
-        <Icon name="plus" /> Add expense
-      </Link>
-      <nav className="flex flex-1 flex-col gap-1" aria-label="Main">
+      <div className="px-3 pt-2 pb-4">
+        <Link to={addLink} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent text-[15px] font-semibold text-on-accent transition hover:brightness-95 active:scale-[.98]">
+          <Icon name="plus" size={18} strokeWidth={2.5} /> Add expense
+        </Link>
+      </div>
+      <nav className="flex flex-1 flex-col gap-0.5 px-3" aria-label="Main">
         {NAV.map((it) => (
           <NavLink key={it.to} to={it.to} end={it.end}
-            className={({ isActive }) => `flex min-h-11 items-center gap-3 rounded-xl px-3 font-semibold transition ${isActive ? 'bg-surface-2 text-ink' : 'text-muted hover:bg-surface-2/60 hover:text-ink'}`}>
-            {({ isActive }) => (
-              <>
-                <span className={isActive ? 'text-ink' : ''}><Icon name={it.icon} size={20} /></span>
-                <span className="flex-1 whitespace-nowrap">{it.label}</span>
-                {it.count && <Badge count={counts[it.count]} />}
-              </>
-            )}
+            className={({ isActive }) => `group flex min-h-10 items-center gap-3 rounded-lg px-3 text-[14px] font-medium transition ${isActive ? 'bg-surface-2 font-semibold text-ink' : 'text-muted hover:bg-surface-2/70 hover:text-ink'}`}>
+            <Icon name={it.icon} size={18} />
+            <span className="flex-1 whitespace-nowrap">{it.label}</span>
+            {it.count && <Badge count={counts[it.count]} />}
           </NavLink>
         ))}
       </nav>
       {user && (
-        <NavLink to="/profile" className={({ isActive }) => `flex items-center gap-3 rounded-2xl p-2 transition ${isActive ? 'bg-surface-2' : 'hover:bg-surface-2/60'}`}>
-          <Avatar name={user.display_name} size={38} />
-          <span className="min-w-0">
-            <span className="block truncate font-semibold">{user.display_name}</span>
-            <span className="block truncate text-sm text-muted">@{user.username}</span>
-          </span>
-        </NavLink>
+        <div className="border-t border-line p-3">
+          <NavLink to="/profile" className={({ isActive }) => `flex items-center gap-3 rounded-xl p-2 transition ${isActive ? 'bg-surface-2' : 'hover:bg-surface-2/70'}`}>
+            <Avatar name={user.display_name} size={34} />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold">{user.display_name}</span>
+              <span className="block truncate text-xs text-muted">@{user.username}</span>
+            </span>
+            <span className="text-faint"><Icon name="settings" size={16} /></span>
+          </NavLink>
+        </div>
       )}
     </aside>
   )
@@ -79,12 +81,12 @@ function MobileNav() {
   const item = (it: (typeof NAV)[number]) => (
     <li key={it.to} className="flex-1">
       <NavLink to={it.to} end={it.end}
-        className={({ isActive }) => `flex h-16 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold ${isActive ? 'text-ink' : 'text-muted'}`}>
+        className={({ isActive }) => `flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold transition ${isActive ? 'text-ink' : 'text-faint'}`}>
         {({ isActive }) => (
           <>
-            <span className={`relative grid h-8 w-12 place-items-center rounded-full transition ${isActive ? 'bg-accent/25' : ''}`}>
-              <Icon name={it.icon} size={21} />
-              {it.count && counts[it.count] > 0 && <span className="absolute -right-0.5 -top-0.5"><Badge count={counts[it.count]} /></span>}
+            <span className="relative">
+              <Icon name={it.icon} size={22} strokeWidth={isActive ? 2.3 : 1.9} />
+              {it.count && counts[it.count] > 0 && <span className="absolute -top-1.5 -right-2.5"><Badge count={counts[it.count]} /></span>}
             </span>
             {'short' in it ? it.short : it.label}
           </>
@@ -93,15 +95,15 @@ function MobileNav() {
     </li>
   )
   return (
-    <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur md:hidden"
+    <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/90 backdrop-blur-md md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
       <ul className="mx-auto flex max-w-[520px] items-center">
         {item(NAV[0])}
         {item(NAV[1])}
         <li className="flex flex-1 justify-center">
           <NavLink to={addLink} aria-label="Add expense"
-            className="-mt-6 grid size-14 place-items-center rounded-2xl bg-accent text-on-accent shadow-lg shadow-black/20 ring-4 ring-bg transition active:scale-95">
-            <Icon name="plus" size={26} strokeWidth={2.5} />
+            className="grid size-12 place-items-center rounded-2xl bg-accent text-on-accent shadow-[0_6px_16px_-4px_rgb(120_160_0/0.55)] transition active:scale-95">
+            <Icon name="plus" size={24} strokeWidth={2.6} />
           </NavLink>
         </li>
         {item(NAV[2])}
@@ -113,7 +115,7 @@ function MobileNav() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-dvh md:pl-64">
+    <div className="min-h-dvh md:pl-[248px]">
       <Sidebar />
       {children}
       <MobileNav />

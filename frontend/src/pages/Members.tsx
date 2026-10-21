@@ -4,7 +4,7 @@ import { api, ApiError } from '../api/client'
 import { useGroup, useGroupMutation } from '../api/hooks'
 import type { Member } from '../api/types'
 import { BalancePill } from '../components/Balance'
-import { Avatar, BottomSheet, Button, Field, FormError, Page, Spinner, TopBar } from '../components/ui'
+import { Avatar, BottomSheet, Button, Field, FormError, Icon, Page, Spinner, TopBar } from '../components/ui'
 
 type Confirm = { kind: 'leave' } | { kind: 'delete' } | { kind: 'remove'; member: Member } | null
 
@@ -33,37 +33,46 @@ export function MembersPage() {
       <TopBar title="Group settings" back={`/groups/${id}`} />
       <Page>
         {isAdmin && (
-          <form className="flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); if (name?.trim()) rename.mutate(name.trim(), { onSuccess: () => setName(null) }) }}>
+          <form className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4" onSubmit={(e) => { e.preventDefault(); if (name?.trim()) rename.mutate(name.trim(), { onSuccess: () => setName(null) }) }}>
             <Field id="rename" label="Group name" value={name ?? g.name} onChange={(e) => setName(e.target.value)} maxLength={80} />
-            {name !== null && name !== g.name && <Button type="submit" disabled={rename.isPending}>Save name</Button>}
+            {name !== null && name !== g.name && <Button type="submit" size="sm" className="self-end" disabled={rename.isPending}>Save name</Button>}
           </form>
         )}
 
-        <section className="flex flex-col gap-2">
-          <h2 className="px-1 text-xs font-semibold uppercase tracking-wider text-muted">{active.length} {active.length === 1 ? 'member' : 'members'}</h2>
-          <ul className="flex flex-col divide-y divide-line rounded-2xl bg-surface">
+        <section className="flex flex-col gap-2.5">
+          <h2 className="px-0.5 text-[13px] font-semibold text-muted">{active.length} {active.length === 1 ? 'member' : 'members'}</h2>
+          <ul className="flex flex-col divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
             {active.map((m) => (
               <li key={m.id}>
                 <button disabled={!isAdmin || m.id === g.my_membership_id} onClick={() => setSelected(m)}
-                  className="flex min-h-16 w-full items-center gap-3 px-4 py-2 text-left disabled:cursor-default">
+                  className="flex min-h-16 w-full items-center gap-3 px-4 py-2 text-left transition enabled:hover:bg-surface-2/60 disabled:cursor-default">
                   <Avatar name={m.user.display_name} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{m.id === g.my_membership_id ? `${m.user.display_name} (you)` : m.user.display_name}</span>
-                    <span className="block truncate text-sm text-muted">@{m.user.username}{m.role === 'admin' && ' · Admin'}</span>
+                    <span className="flex items-center gap-1.5 truncate text-[13px] text-muted">@{m.user.username}{m.role === 'admin' && <span className="rounded bg-surface-2 px-1.5 py-px text-[11px] font-semibold text-ink">Admin</span>}</span>
                   </span>
                   <BalancePill cents={m.balance_cents} currency={g.currency} you={false} />
                 </button>
               </li>
             ))}
           </ul>
-          {isAdmin && <p className="px-1 text-sm text-muted">Tap a member to make them admin or remove them.</p>}
+          {isAdmin && <p className="px-0.5 text-[13px] text-muted">Tap a member to make them admin or remove them.</p>}
         </section>
 
         <FormError message={errorOf(setRole) ?? errorOf(removeMember)} />
 
-        <section className="mt-4 flex flex-col gap-2">
-          <Button variant="ghost" onClick={() => setConfirm({ kind: 'leave' })}>Leave group</Button>
-          {isAdmin && <Button variant="danger" onClick={() => setConfirm({ kind: 'delete' })}>Delete group</Button>}
+        <section className="flex flex-col gap-2.5">
+          <h2 className="px-0.5 text-[13px] font-semibold text-muted">Danger zone</h2>
+          <div className="flex flex-col divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+            <button onClick={() => setConfirm({ kind: 'leave' })} className="flex min-h-14 items-center gap-3 px-4 text-left font-semibold transition hover:bg-surface-2/60">
+              <Icon name="logout" size={18} /> Leave group
+            </button>
+            {isAdmin && (
+              <button onClick={() => setConfirm({ kind: 'delete' })} className="flex min-h-14 items-center gap-3 px-4 text-left font-semibold text-owes transition hover:bg-owes-bg/60">
+                <Icon name="trash" size={18} /> Delete group
+              </button>
+            )}
+          </div>
         </section>
       </Page>
 
@@ -82,7 +91,7 @@ export function MembersPage() {
       <BottomSheet open={!!confirm} onClose={() => setConfirm(null)}
         title={confirm?.kind === 'leave' ? 'Leave this group?' : confirm?.kind === 'delete' ? 'Delete this group?' : `Remove ${confirm?.kind === 'remove' ? confirm.member.user.display_name : ''}?`}>
         <div className="flex flex-col gap-3">
-          <p className="text-muted">
+          <p className="text-[15px] text-muted">
             {confirm?.kind === 'leave' && 'You can leave once your balance is zero. You can rejoin later with an invite.'}
             {confirm?.kind === 'delete' && `All expenses and payments in ${g.name} will be deleted for everyone. This can't be undone.`}
             {confirm?.kind === 'remove' && 'They lose access to the group. Their expenses and balance stay, so the group still adds up.'}

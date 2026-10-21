@@ -1,24 +1,31 @@
 @import "tailwindcss";
 
-/* Layout: single phone column (max 480px), sticky header, bottom nav, floating add button.
-   Ink navy for actions, marigold for the one thing to tap; green/red only mean owed/owes. */
+/* "Ledger" look: warm paper, near-black ink, one lime accent for the thing to tap.
+   Green/red only ever mean owed/owes. Cards are hairline-bordered, not tinted.
+   Phone: single column + bottom bar. Desktop: sidebar + two-column pages. */
 :root {
-  --bg: #f4f6fa;
+  --bg: #f6f6f3;
   --surface: #ffffff;
-  --surface-2: #eaeef5;
-  --line: #dde3ec;
-  --ink: #141b2d;
-  --muted: #5d6880;
-  --primary: #1d2b4f;
+  --surface-2: #f0f0ec;
+  --line: #e4e3de;
+  --line-strong: #d3d2cc;
+  --ink: #121316;
+  --muted: #6a6c72;
+  --faint: #a3a4a8;
+  --primary: #121316;
   --on-primary: #ffffff;
-  --accent: #f2a93b;
-  --on-accent: #2a1a00;
-  --owed: #0f7a55;
-  --owed-bg: #e3f4ec;
-  --owes: #c03636;
-  --owes-bg: #fbe8e8;
-  --overlay: rgb(15 20 35 / 0.45);
-  /* Height of the phone bottom bar; 0 on wider screens where the sidebar takes over. */
+  --accent: #c8f04a;
+  --on-accent: #121316;
+  --owed: #0a8558;
+  --owed-bg: #e5f4ec;
+  --owes: #d23f2d;
+  --owes-bg: #fcebe8;
+  /* The dark balance card stays dark in both themes. */
+  --hero: #16171b;
+  --hero-2: #24262c;
+  --hero-ink: #f4f4f1;
+  --hero-muted: #9c9ea5;
+  --overlay: rgb(10 11 14 / 0.5);
   --nav-h: calc(64px + env(safe-area-inset-bottom));
   color-scheme: light;
 }
@@ -27,21 +34,25 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #11151f;
-    --surface: #1a2030;
-    --surface-2: #232a3d;
-    --line: #2d3549;
-    --ink: #eef1f7;
-    --muted: #9aa4ba;
-    --primary: #c9d5f5;
-    --on-primary: #141b2d;
-    --accent: #f5b552;
-    --on-accent: #2a1a00;
-    --owed: #4fd1a0;
-    --owed-bg: #133328;
-    --owes: #ff8a80;
-    --owes-bg: #3a1c1f;
-    --overlay: rgb(0 0 0 / 0.6);
+    --bg: #0c0d0f;
+    --surface: #141518;
+    --surface-2: #1c1e22;
+    --line: #25272c;
+    --line-strong: #34363c;
+    --ink: #f2f2ef;
+    --muted: #8f9198;
+    --faint: #5c5e64;
+    --primary: #f2f2ef;
+    --on-primary: #121316;
+    --accent: #c8f04a;
+    --on-accent: #121316;
+    --owed: #3fd69a;
+    --owed-bg: #10291f;
+    --owes: #ff7d6b;
+    --owes-bg: #33171a;
+    --hero: #1a1c20;
+    --hero-2: #26282d;
+    --overlay: rgb(0 0 0 / 0.65);
     color-scheme: dark;
   }
 }
@@ -51,8 +62,10 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
+  --color-faint: var(--faint);
   --color-primary: var(--primary);
   --color-on-primary: var(--on-primary);
   --color-accent: var(--accent);
@@ -61,8 +74,13 @@
   --color-owed-bg: var(--owed-bg);
   --color-owes: var(--owes);
   --color-owes-bg: var(--owes-bg);
-  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-hero: var(--hero);
+  --color-hero-2: var(--hero-2);
+  --color-hero-ink: var(--hero-ink);
+  --color-hero-muted: var(--hero-muted);
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 html, body, #root { min-height: 100%; }
@@ -70,20 +88,33 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
+  font-feature-settings: "ss01";
   -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
 }
-.num { font-variant-numeric: tabular-nums; }
-h1, h2, h3 { text-wrap: balance; }
+.num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+h1, h2, h3 { text-wrap: balance; letter-spacing: -0.02em; }
 @layer base {
-  /* In the base layer so `outline-none` on inputs (which show focus with their border) still wins. */
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.55; cursor: pointer; }
 }
 
+/* Hides the scrollbar on horizontal chip rows while keeping them scrollable. */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-.animate-sheet { animation: sheet-up 220ms cubic-bezier(.2,.8,.2,1); }
+@keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+.animate-sheet { animation: sheet-up 240ms cubic-bezier(.2,.8,.2,1); }
+@media (min-width: 768px) { .animate-sheet { animation: pop-in 200ms cubic-bezier(.2,.8,.2,1); } }
 .animate-fade { animation: fade-in 160ms ease-out; }
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--line) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
 @media (prefers-reduced-motion: reduce) {
-  .animate-sheet, .animate-fade { animation: none; }
+  .animate-sheet, .animate-fade, .skeleton { animation: none; }
 }

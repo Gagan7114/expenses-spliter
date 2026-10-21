@@ -26,12 +26,12 @@ export function JoinLanding() {
             <Button variant="ghost" onClick={() => navigate('/invite?tab=join')}>Try another code</Button>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-5 rounded-3xl bg-surface px-6 py-10 text-center">
-            <GroupTile name={preview.data.group.name} size={64} />
-            <div>
-              <p className="text-sm text-muted">You're invited to</p>
-              <h2 className="font-display text-2xl font-extrabold">{preview.data.group.name}</h2>
-              <p className="text-muted">{preview.data.member_count} {preview.data.member_count === 1 ? 'person' : 'people'} · {preview.data.group.currency}</p>
+          <div className="flex flex-col items-center gap-6 rounded-3xl border border-line bg-surface px-6 py-10 text-center">
+            <GroupTile name={preview.data.group.name} size={72} />
+            <div className="flex flex-col gap-1">
+              <p className="text-[13px] font-medium text-muted">You're invited to</p>
+              <h2 className="text-[26px] font-bold tracking-tight">{preview.data.group.name}</h2>
+              <p className="text-sm text-muted">{preview.data.member_count} {preview.data.member_count === 1 ? 'person' : 'people'} · {preview.data.group.currency}</p>
             </div>
             {preview.data.already_member ? (
               <Button className="w-full" onClick={() => navigate(`/groups/${preview.data.group.id}`, { replace: true })}>You're already in. Open group</Button>

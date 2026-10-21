@@ -18,7 +18,7 @@ export function UpiPayButton({ upiId, name, amountCents, currency, note, onOpene
   const [saveError, setSaveError] = useState(false)
   const qr = useRef<HTMLCanvasElement>(null)
   if (currency !== 'INR') return null
-  if (!upiId) return <p className="text-sm text-muted">{name} hasn't added a UPI ID yet. Ask them to add it in their profile.</p>
+  if (!upiId) return <p className="rounded-xl bg-surface-2 px-3.5 py-3 text-[13px] text-muted">{name} hasn't added a UPI ID yet. Ask them to add it in their profile.</p>
 
   const payment = { upiId, name, amountCents, note }
   const amount = formatMoney(amountCents, currency)
@@ -55,14 +55,15 @@ export function UpiPayButton({ upiId, name, amountCents, currency, note, onOpene
     setTimeout(() => URL.revokeObjectURL(a.href), 1000)
   }
 
-  const chip = 'flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-surface-2 px-3 text-sm font-semibold transition hover:brightness-105 active:scale-[.98]'
-  const row = 'flex min-h-14 w-full items-center gap-3 rounded-2xl bg-surface-2 px-4 text-left font-semibold transition hover:brightness-105 active:scale-[.98]'
+  const chip = 'flex min-h-9 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-[13px] font-semibold text-muted transition hover:border-line-strong hover:text-ink active:scale-[.98]'
+  const row = 'flex min-h-16 w-full items-center gap-3 rounded-2xl border border-line bg-surface px-4 text-left font-semibold transition hover:border-line-strong hover:bg-surface-2 active:scale-[.99]'
+  const appMark = 'grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-ink'
 
   return (
     <div className="flex flex-col gap-2">
       <button type="button" onClick={() => setSheet('apps')}
-        className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-5 font-semibold text-on-primary transition hover:brightness-105 active:scale-[.98]">
-        <Icon name="wallet" size={20} /> Pay {amount} with UPI
+        className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-[15px] font-semibold text-on-primary transition hover:opacity-90 active:scale-[.98]">
+        <Icon name="wallet" size={19} /> Pay <span className="num">{amount}</span> with UPI
       </button>
       <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
         <button type="button" onClick={() => copy('id')} className={chip} aria-label="Copy UPI ID">
@@ -77,9 +78,10 @@ export function UpiPayButton({ upiId, name, amountCents, currency, note, onOpene
       </div>
 
       <BottomSheet open={sheet === 'apps'} onClose={close} title="Pay with which app?">
-        <p className="mb-3 text-muted">
-          <span className="num font-semibold text-ink">{amount}</span> to {name} · {upiId}
-        </p>
+        <div className="mb-4 flex items-baseline justify-between gap-3 rounded-2xl bg-surface-2 px-4 py-3">
+          <span className="min-w-0 truncate text-sm text-muted">to <b className="text-ink">{name}</b> · <span className="num">{upiId}</span></span>
+          <span className="num shrink-0 text-xl font-bold">{amount}</span>
+        </div>
         <ul className="flex flex-col gap-2">
           {UPI_APPS.map((app) => (
             <li key={app.id}>
@@ -89,26 +91,26 @@ export function UpiPayButton({ upiId, name, amountCents, currency, note, onOpene
                   navigator.clipboard?.writeText(upiAmount(amountCents)).catch(() => {})
                   close(); onOpened()
                 }}>
-                <Icon name="wallet" size={20} />
+                <span className={appMark}><Icon name="wallet" size={19} /></span>
                 <span className="flex-1">
                   {app.name}
-                  <span className="block text-sm font-normal text-muted">
+                  <span className="block text-[13px] font-normal text-muted">
                     Type or paste <span className="num">{amount}</span> (we copy it)
                   </span>
                 </span>
-                <Icon name="chevron" size={18} />
+                <span className="text-faint"><Icon name="chevron" size={18} /></span>
               </a>
             </li>
           ))}
           <li>
             <button type="button" onClick={() => setSheet('qr')} className={row}>
-              <Icon name="qr" size={20} />
-              <span className="flex-1">Any other app <span className="block text-sm font-normal text-muted">Scan a QR code</span></span>
-              <Icon name="chevron" size={18} />
+              <span className={appMark}><Icon name="qr" size={19} /></span>
+              <span className="flex-1">Any other app <span className="block text-[13px] font-normal text-muted">Scan a QR code</span></span>
+              <span className="text-faint"><Icon name="chevron" size={18} /></span>
             </button>
           </li>
         </ul>
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-4 text-[13px] leading-relaxed text-muted">
           The app opens with {name} filled in. Enter the amount yourself: apps block payments where another app fills it in. If it still fails, use the QR code.
         </p>
       </BottomSheet>
@@ -117,22 +119,24 @@ export function UpiPayButton({ upiId, name, amountCents, currency, note, onOpene
         <div className="flex flex-col items-center gap-4">
           {/* Always dark-on-white: scanners struggle with inverted codes in dark mode. The
               margin is drawn into the canvas so a saved image keeps its quiet zone. */}
-          <div className="overflow-hidden rounded-2xl bg-white">
+          <div className="overflow-hidden rounded-2xl border border-line bg-white p-1">
             <QRCodeCanvas ref={qr} value={upiQrText(payment)} size={240} marginSize={3} level="M" bgColor="#ffffff" fgColor="#000000" />
           </div>
           <p className="text-center text-muted">
-            <span className="num font-display text-2xl font-bold text-ink">{amount}</span><br />
+            <span className="num text-3xl font-bold tracking-tight text-ink">{amount}</span><br />
             to {name} · <span className="num">{upiId}</span>
           </p>
-          <ol className="flex w-full list-decimal flex-col gap-1 rounded-xl bg-surface-2 py-3 pr-4 pl-9 text-sm">
+          <ol className="flex w-full list-decimal flex-col gap-1.5 rounded-2xl bg-surface-2 py-3.5 pr-4 pl-9 text-sm leading-snug marker:font-semibold marker:text-muted">
             <li><b>Save QR</b> to your photos (on iPhone, tap "Save Image").</li>
             <li>Open your UPI app and tap the <b>scanner</b>.</li>
             <li>Tap the <b>gallery</b> icon and pick the QR. The amount fills in by itself.</li>
           </ol>
-          <p className="-mt-2 self-start text-sm text-muted">Paying from another phone? Just scan this screen.</p>
+          <p className="-mt-1 self-start text-[13px] text-muted">Paying from another phone? Just scan this screen.</p>
           {saveError && <p role="alert" className="w-full rounded-xl bg-owes-bg px-4 py-3 text-sm text-owes">Couldn't save it. Take a screenshot instead.</p>}
-          <Button variant="ghost" className="w-full" onClick={saveQr}>Save QR</Button>
-          <Button className="w-full" onClick={() => { close(); onOpened() }}>I've paid</Button>
+          <div className="grid w-full grid-cols-2 gap-2">
+            <Button variant="ghost" onClick={saveQr}>Save QR</Button>
+            <Button onClick={() => { close(); onOpened() }}>I've paid</Button>
+          </div>
         </div>
       </BottomSheet>
     </div>

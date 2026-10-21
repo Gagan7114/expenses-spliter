@@ -38,14 +38,16 @@ export function SettleUp() {
       <TopBar title="Settle up" back={`/groups/${id}`} />
       <Page>
         {payments.length === 0 ? (
-          <Empty title="Everyone is settled up">Nobody owes anything in {g.name} right now.</Empty>
+          <Empty title="Everyone is settled up" icon="check">Nobody owes anything in {g.name} right now.</Empty>
         ) : (
           <>
-            <section className="rounded-3xl bg-primary px-5 py-4 text-on-primary">
-              <p className="font-display text-2xl font-bold">
+            <section className="relative overflow-hidden rounded-3xl bg-hero px-5 py-5 text-hero-ink md:px-6">
+              <div className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full bg-accent/10 blur-3xl" />
+              <p className="relative flex items-center gap-2 text-[13px] font-medium text-accent"><Icon name="sparkle" size={15} /> Smart settle</p>
+              <p className="relative mt-1 text-2xl font-bold tracking-tight">
                 {p.optimal_count === 1 ? '1 payment settles everyone' : `${p.optimal_count} payments settle everyone`}
               </p>
-              <p className="text-sm opacity-80">
+              <p className="relative mt-1 text-[13px] text-hero-muted">
                 Worked out from {p.expense_count} {p.expense_count === 1 ? 'expense' : 'expenses'}
                 {p.greedy_count > p.optimal_count && ` · ${p.greedy_count - p.optimal_count} fewer than the usual method`}
               </p>
@@ -56,14 +58,15 @@ export function SettleUp() {
                 const payee = members.get(pay.to)?.user
                 const canUpi = pay.from === me && !!payee?.upi_id && g.currency === 'INR'
                 return (
-                  <li key={`${pay.from}-${pay.to}`} className={`flex flex-col gap-3 rounded-2xl bg-surface p-4 ${mine ? 'ring-2 ring-accent/70' : ''}`}>
+                  <li key={`${pay.from}-${pay.to}`} className={`flex flex-col gap-3 rounded-2xl border bg-surface p-4 ${mine ? 'border-ink ring-1 ring-ink' : 'border-line'}`}>
                     <div className="flex items-center gap-2">
                       <Avatar name={members.get(pay.from)?.user.display_name ?? '?'} size={36} />
-                      <span className="text-muted"><Icon name="arrow" size={18} /></span>
+                      <span className="text-faint"><Icon name="arrow" size={18} /></span>
                       <Avatar name={members.get(pay.to)?.user.display_name ?? '?'} size={36} />
-                      <span className="num ml-auto font-display text-xl font-bold">{formatMoney(pay.amount_cents, g.currency)}</span>
+                      {mine && <span className="ml-1 rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-on-accent">You</span>}
+                      <span className="num ml-auto text-xl font-bold tracking-tight">{formatMoney(pay.amount_cents, g.currency)}</span>
                     </div>
-                    <p>
+                    <p className="text-[15px]">
                       <span className="font-semibold">{nameOf(members, pay.from, me)}</span> {pay.from === me ? 'pay' : 'pays'}{' '}
                       <span className="font-semibold">{nameOf(members, pay.to, me)}</span>
                     </p>
@@ -72,8 +75,8 @@ export function SettleUp() {
                         note={`Splitter: ${g.name}`} onOpened={() => { setPaying(pay); setAfterUpi(true) }} />
                     )}
                     {pay.to === me && !user?.upi_id && g.currency === 'INR' && (
-                      <p className="text-sm text-muted">
-                        <Link to="/profile" className="font-semibold text-primary underline">Add your UPI ID</Link> so {nameOf(members, pay.from, me)} can pay you in one tap.
+                      <p className="rounded-xl bg-surface-2 px-3.5 py-3 text-[13px] text-muted">
+                        <Link to="/profile" className="font-semibold text-ink underline underline-offset-2">Add your UPI ID</Link> so {nameOf(members, pay.from, me)} can pay you in one tap.
                       </p>
                     )}
                     <Button variant={mine && !canUpi ? 'primary' : 'ghost'} onClick={() => { setPaying(pay); setAfterUpi(false) }}>
@@ -83,7 +86,7 @@ export function SettleUp() {
                 )
               })}
             </ul>
-            <p className="px-1 text-sm text-muted">Pay by UPI, bank transfer or cash, then mark it here so everyone's balance updates.</p>
+            <p className="px-1 text-[13px] text-muted">Pay by UPI, bank transfer or cash, then mark it here so everyone's balance updates.</p>
           </>
         )}
       </Page>
@@ -91,7 +94,7 @@ export function SettleUp() {
       <BottomSheet open={!!paying} onClose={() => setPaying(null)} title={afterUpi ? 'Did the UPI payment go through?' : 'Record this payment?'}>
         {paying && (
           <div className="flex flex-col gap-4">
-            <p className="text-muted">
+            <p className="text-[15px] text-muted">
               <span className="font-semibold text-ink">{nameOf(members, paying.from, me)}</span> paid{' '}
               <span className="font-semibold text-ink">{nameOf(members, paying.to, me)}</span>{' '}
               <span className="num font-semibold text-ink">{formatMoney(paying.amount_cents, g.currency)}</span>.

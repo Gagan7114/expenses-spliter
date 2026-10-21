@@ -32,11 +32,11 @@ export function hueOf(name: string) {
   return hash % 360
 }
 
-/** Soft background + strong foreground for a hue, readable in both themes. */
+/** Quiet background + strong foreground for a hue, readable in both themes. */
 export function tint(hue: number) {
   return {
-    background: `light-dark(oklch(0.93 0.05 ${hue}), oklch(0.33 0.07 ${hue}))`,
-    color: `light-dark(oklch(0.42 0.12 ${hue}), oklch(0.88 0.08 ${hue}))`,
+    background: `light-dark(oklch(0.95 0.035 ${hue}), oklch(0.29 0.045 ${hue}))`,
+    color: `light-dark(oklch(0.44 0.11 ${hue}), oklch(0.86 0.08 ${hue}))`,
   }
 }
 

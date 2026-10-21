@@ -4,6 +4,7 @@ import { useAuth } from './auth/AuthContext'
 import { AppShell } from './components/AppShell'
 import { Spinner } from './components/ui'
 import { ForgotPassword, Login, ResetPassword, Signup } from './pages/Auth'
+import { DailyItemPage, DailyListPage } from './pages/Daily'
 import { DetailsPage } from './pages/Details'
 import { AddExpensePage, EditExpensePage } from './pages/ExpenseForm'
 import { GroupPage } from './pages/Group'
@@ -48,6 +49,8 @@ export default function App() {
       <Route path="/" element={<SignedIn><Home /></SignedIn>} />
       <Route path="/add" element={<SignedIn><AddExpensePage /></SignedIn>} />
       <Route path="/details" element={<SignedIn><DetailsPage /></SignedIn>} />
+      <Route path="/daily" element={<SignedIn><DailyListPage /></SignedIn>} />
+      <Route path="/daily/:id" element={<SignedIn><DailyItemPage /></SignedIn>} />
       <Route path="/pending" element={<SignedIn><PendingPage /></SignedIn>} />
       <Route path="/invite" element={<SignedIn><InviteJoinPage /></SignedIn>} />
       <Route path="/join" element={<Navigate to="/invite?tab=join" replace />} />

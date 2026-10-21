@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './client'
-import type { ActivityItem, Expense, GroupDetail, GroupSummary, Invite, PendingGroup, SettlePlan, Settlement } from './types'
+import type { ActivityItem, DailyItemSummary, DailyMonthDetail, Expense, GroupDetail, GroupSummary, Invite, PendingGroup, SettlePlan, Settlement } from './types'
 
 // Polling keeps everyone in a group in sync until WebSockets (Django Channels) are added.
 const LIVE = { refetchInterval: 10_000 }
@@ -14,6 +14,8 @@ export const keys = {
   inbox: ['invites'] as const,
   activity: ['activity'] as const,
   pending: ['pending'] as const,
+  daily: ['daily'] as const,
+  dailyMonth: (id: number, month: string) => ['daily', id, month] as const,
 }
 
 export const useGroups = () => useQuery({ queryKey: keys.groups, queryFn: () => api<GroupSummary[]>('/groups/'), ...LIVE })
@@ -23,6 +25,15 @@ export const useSettlements = (id: number) => useQuery({ queryKey: keys.settleme
 export const useSettlePlan = (id: number) => useQuery({ queryKey: keys.settle(id), queryFn: () => api<SettlePlan>(`/groups/${id}/settle/`), ...LIVE })
 export const useActivity = () => useQuery({ queryKey: keys.activity, queryFn: () => api<ActivityItem[]>('/activity/'), ...LIVE })
 export const usePending = () => useQuery({ queryKey: keys.pending, queryFn: () => api<PendingGroup[]>('/pending/'), ...LIVE })
+export const useDailyItems = () => useQuery({ queryKey: keys.daily, queryFn: () => api<DailyItemSummary[]>('/daily-items/') })
+export const useDailyMonth = (id: number, month: string) =>
+  useQuery({ queryKey: keys.dailyMonth(id, month), queryFn: () => api<DailyMonthDetail>(`/daily-items/${id}/month/?month=${month}`) })
+
+/** A mutation that refreshes all daily-item data when it succeeds. */
+export function useDailyMutation<TVars, TResult = unknown>(fn: (vars: TVars) => Promise<TResult>) {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: fn, onSuccess: () => qc.invalidateQueries({ queryKey: keys.daily }) })
+}
 export const useInbox = () => useQuery({ queryKey: keys.inbox, queryFn: () => api<Invite[]>('/invites/'), ...LIVE })
 
 /** A mutation that refreshes everything about one group (and the home list) when it succeeds. */
